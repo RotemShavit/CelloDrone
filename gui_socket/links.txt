@@ -1,0 +1,3 @@
+https://docs.python.org/2/library/multiprocessing.html
+https://www.reddit.com/r/learnpython/comments/8lv3fe/gui_help_tkinter_keeps_freezing_when_button_is/
+https://stackoverflow.com/questions/1196074/how-to-start-a-background-process-in-python
