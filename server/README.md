@@ -8,5 +8,6 @@
 
 _**Deatailing:**_
 
-*pyFiles - directory which contains all the python scripts
-*bashFiles - directory which contains all the bash files that will be executed automatically on start up
+* pyFiles - directory which contains all the python scripts
+
+* bashFiles - directory which contains all the bash files that will be executed automatically on start up
