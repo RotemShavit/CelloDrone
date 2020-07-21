@@ -1,0 +1,17 @@
+## ON PC:
+1. Open Ubuntu
+2. cd mnt/c/SITL/SITL
+3. nano location.py - edit lat, lon and number of drones
+4. python location.py > loc
+5. ./swarm_fast.bash loc
+
+### NOW THE DRONE IS SIMULATED. IP IS THE PC IP, PORT IS 11010 (DEFAULT ,MAY DIFFER) ###
+
+6. open QGroundControl/missionplanner (or any other control program)
+
+## ON RPI:
+7. nano mavproxy_link.py
+8. make sure the uncomment line is **os.system("python MAVProxy/mavproxy.py --master=tcp:[drone_ip]:[drone_port] --baudrate 57600 --aircraft MyCopter --out=udpbcast:[pc_bcast]:14550")**
+
+
+Now you should see drone connected to QGC
