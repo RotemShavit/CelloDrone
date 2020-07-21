@@ -11,7 +11,7 @@
 
 ## ON RPI:
 7. nano mavproxy_link.py
-8. make sure the uncomment line is **os.system("python MAVProxy/mavproxy.py --master=tcp:[drone_ip]:[drone_port] --baudrate 57600 --aircraft MyCopter --out=udpbcast:[pc_bcast]:14550")**
+8. make sure the uncomment line is *os.system("python MAVProxy/mavproxy.py --master=tcp:[drone_ip]:[drone_port] --baudrate 57600 --aircraft MyCopter --out=udpbcast:[pc_bcast]:14550")*
 
 
 Now you should see drone connected to QGC
