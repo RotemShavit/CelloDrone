@@ -23,7 +23,7 @@ class FallbackClass:
     def __init__(self):
         self.hot_spot_list = []
         self.distance_list = []
-        self.hot_spot_to_return = ["", ""]
+        self.hot_spot_to_return = ["32.079341", "34.802888"]
         self.fallback_counter = 0
 
     def change_hot_spot(self, coord):
@@ -55,28 +55,31 @@ def hot_spot_calc(fb, hot_spot_list, distance_list, cur_gps_lat, cur_gps_lon):
             hot_spot_lat_to_fallback = hot_spot_list[location_idx][0]
             hot_spot_lon_to_fallback = hot_spot_list[location_idx][1]
             fb.change_hot_spot([hot_spot_lat_to_fallback, hot_spot_lon_to_fallback])
-    print("Current Fallback Location: " + str([hot_spot_lat_to_fallback, hot_spot_lon_to_fallback]))
+    #print("Current Fallback Location: " + str([hot_spot_lat_to_fallback, hot_spot_lon_to_fallback]))
     print("\n")
-
 
 def start_fallback(data_list):
     fb = FallbackClass()
     i = 0
     low_latency_counter = 0
+    is_fallback_active = 1
     # while True:
     while i < len(testing_latency):
-        if(data_list[1]==1):
+        if(data_list[5] == 1):
+            is_fallback_activated = 1
+        if(is_fallback_active==1):
             # print("fallback_counter = " + str(fb.fallback_counter))
             # print("low_latency_counter = " + str(low_latency_counter))
-            print("Operation Time: " + str(i) + " sec")
+            #print("Operation Time: " + str(i) + " sec")
             cur_gps_lat_str = str(testing_gps[i][0])  # probably how we get gps by command like vehicle.getgps() or something like this
             cur_gps_lon_str = str(testing_gps[i][1])
             cur_gps_lat = float(cur_gps_lat_str)
             cur_gps_lon = float(cur_gps_lon_str)
             # delay_cur_gps_str = str(testing_latency[i])  # the socket delay in seconds for the last message. need to change to real parameter
             delay_cur_gps = float(data_list[2])
-            print("current latency: " + str(delay_cur_gps))
-            print(data_list)
+            if int(delay_cur_gps) != -1:
+                print("Current latency: " + str(delay_cur_gps) + " ms.")
+            #print(data_list)
             # delay_cur_gps = int(delay_cur_gps_str)
             i = i + 1
             if delay_cur_gps < HOT_SPOT_CALC_DELAY:
@@ -91,18 +94,50 @@ def start_fallback(data_list):
                 fb.fallback_counter = fb.fallback_counter + 1
                 low_latency_counter = 0
             if (fb.fallback_counter >= FALLBACK_DELAY) | (data_list[1] == 0):  # number of seconds to activate fallback
-                print("Fallback Activated")
+                print("Fallback Activated.")
+                print("Hot spot GPS destination: " + str(fb.hot_spot_to_return))
+                if fb.hot_spot_to_return[0] == "":
+                        fb.hot_spot_to_return[0] = data_list[6].home_location.lat
+                        fb.hot_spot_to_return[1] = data_list[6].home_location.lon
                 fallback_lat = fb.hot_spot_to_return[0]
                 fallback_lon = fb.hot_spot_to_return[1]
-                print("Returning to GPS Location: " + "[" + str(fb.hot_spot_to_return[0]) + ", " + str(fb.hot_spot_to_return[1]) + "]")
                 fallback_location = dronekit.LocationGlobal(fallback_lat, fallback_lon, alt=10) # set location object for dronekit
                 fb.fallback_counter = 0
                 data_list[1] = 0
                 data_list[3] = fallback_lat
                 data_list[4] = fallback_lon
+                data_list[5] = 0
+                is_fallback_active = 0
+                #data_list[6].mode = dronekit.VehicleMode("STABILIZE")
+                #data_list[6].armed = True
+                #while data_list[6].armed != True:
+                    #data_list[6].armed = True
+                    #data_list[6].flush()
+                    #print ("mode?", str(data_list[6].mode))
+                    #print ("is armable?", data_list[6].is_armable)
+                    #print("is armed?", data_list[6].armed)
+                    #print ("not armed yet")
+                    #sleep(1)
+                #print("is armed?", data_list[6].armed)
+                data_list[6].mode = dronekit.VehicleMode("GUIDED")
+                #print("is guided?", str(data_list[6].mode))
+                #data_list[6].flush()
                 # REMEMBER TO SWITCH TO GUIDED MODE
                 # IF SIGNAL IS RETRIEVED THEN SWITCH TO STABLE
-                # vehicle.simple_goto(fallback_location) # simple_goto(location, airspeed=None, groundspeed=None)
+                
+                #data_list[6].airspeed=300
+                try:
+                    data_list[6].simple_goto(fallback_location, airspeed = 8) # simple_goto(location, airspeed=None, groundspeed=None) | speed = 8 m/s
+                except:
+                    data_list[6].mode = dronekit.VehicleMode("RTL")
+                    print("Unexpected Error: Please try again.")
+                    data_list[7] = 1
+                    break
+                    
+                #point1 = dronekit.LocationGlobal(-35.361354, 149165218, 20)
+                #data_list[6].simple_goto(point1, 300) # simple_goto(location, airspeed=None, groundspeed=None)
+                #sleep(10)
+                #data_list[6].mode = dronekit.VehicleMode("RTL")
             # print("\n")
         sleep(1)
 
