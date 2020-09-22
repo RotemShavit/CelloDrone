@@ -7,7 +7,9 @@ from dronekit import *
 from dronekit.mavlink import MAVConnection
 from datetime import datetime
 from geopy.distance import distance
+from mavproxy_link import start_mav
 import math
+import threading
 
 TIME = "TIME"
 # create the socket
@@ -33,12 +35,13 @@ def start_server(data_list):
     s.listen(5)
     s_client_socket, s_address = s.accept()
 
-    #os.system("python mavproxy_link.py &")
+    thread = threading.Thread(target=start_mav)
+    thread.start()
     print("Ready to connect the GCS software.")
 
     try:
-        #cello_drone = connect("/dev/ttyS0", wait_ready=True, baud=57600)
-        cello_drone = connect("tcp:37.25.36.17:11010 ", wait_ready=True, baud=57600)
+        cello_drone = connect("/dev/ttyS0", wait_ready=True, baud=57600)
+        #cello_drone = connect("tcp:192.168.1.30:11010", wait_ready=True, baud=57600)
         dict_server_to_client["MAV"] = "UP"
         print("Connected to the flight controller via Dronekit.")
         data_list[6] = cello_drone
@@ -64,7 +67,7 @@ def start_server(data_list):
     data_list[0] = 1
     time.sleep(1)
     try:
-        #os.system("python camera_script.py")
+        os.system("python camera_script.py")
         dict_server_to_client["CAM"] = "UP"
     except:
         dict_server_to_client["CAM"] = "DOWN"
@@ -82,9 +85,9 @@ def start_server(data_list):
     recv_dict = {"ID":"0"}
     i = 0
     while True:
-        print("Current Location: (" + str(cello_drone.location.global_frame.lat) + "," + str(cello_drone.location.global_frame.lon) + ")")
-        if i == 8:
-            data_list[1] = 0
+        #print("Current Location: (" + str(cello_drone.location.global_frame.lat) + "," + str(cello_drone.location.global_frame.lon) + ")")
+#         if i == 8:
+#             data_list[1] = 0
         i = i + 1
         to_send = ""
         if active & data_list[1] == 1:
@@ -160,11 +163,11 @@ def start_server(data_list):
                     break
                 d = distance((data_list[3], data_list[4]), (cello_drone.location.global_frame.lat, cello_drone.location.global_frame.lon))
                 print("Distance to fallback destination: " + str(d.m) + " m.")
-                print("Current Location: (" + str(cello_drone.location.global_frame.lat) + "," + str(cello_drone.location.global_frame.lon) + ")")
+                #print("Current Location: (" + str(cello_drone.location.global_frame.lat) + "," + str(cello_drone.location.global_frame.lon) + ")")
                 #print("lat and lon are: ", cello_drone.location.global_frame.lat, cello_drone.location.global_frame.lon)
                 print("\n")
                 time.sleep(1)
-                if(d.m < 12):
+                if(d.m < 10):
                     break
                 continue
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -172,15 +175,21 @@ def start_server(data_list):
             s.bind(('', 12341))
             s.listen(5)
             print("Trying to reconnect...")
-            s_client_socket, s_address = s.accept()
-            print("Reconnected.")
-            #cello_drone.mode = dronekit.VehicleMode("STABLE")
-            cello_drone.mode = VehicleMode("AUTO")
-            data_list[1] = 1
-            data_list[5] = 1
-            start_time = time.time()
-            s_msg = empty_msg
-            active = True
+            s.settimeout(10)
+            try:
+                s_client_socket, s_address = s.accept()
+                print("Reconnected.")
+                #cello_drone.mode = dronekit.VehicleMode("STABLE")
+                #cello_drone.mode = VehicleMode("AUTO")
+                data_list[1] = 1
+                data_list[5] = 1
+                start_time = time.time()
+                s_msg = empty_msg
+                active = True
+            except:
+                print("Could not reestablish communication. Returning to launch")
+                cello_drone.mode = VehicleMode("RTL")
+                break
 
         # if "Battery" in s_msg:
         #     to_send = to_send + str(cello_drone.battery)+";"
